@@ -4,7 +4,7 @@
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcsi-driver%2Fcsi-driver-smb.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcsi-driver%2Fcsi-driver-smb?ref=badge_shield)
 
 ### About
-This driver allows Kubernetes to use [SMB](https://wiki.wireshark.org/SMB) CSI volume, csi plugin name: `smb.csi.k8s.io`
+This driver allows Kubernetes to use [SMB](https://wiki.wireshark.org/SMB) CSI volume on both Linux and , csi plugin name: `smb.csi.k8s.io`
 
 ### Project status: alpha
 
