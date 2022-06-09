@@ -26,5 +26,8 @@ ARG binary=./_output/${ARCH}/smbplugin.exe
 COPY ${binary} /smbplugin.exe
 COPY --from=addon /Windows/System32/netapi32.dll /Windows/System32/netapi32.dll
 
+# Delete DiagTrack service as it causes CPU spikes and delays pod/container startup times.
+RUN sc.exe delete diagtrack -f
+
 USER ContainerAdministrator
 ENTRYPOINT ["/smbplugin.exe"]
