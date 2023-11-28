@@ -26,6 +26,8 @@ import (
 
 	csicommon "github.com/kubernetes-csi/csi-driver-smb/pkg/csi-common"
 	"github.com/kubernetes-csi/csi-driver-smb/pkg/mounter"
+
+	azcache "sigs.k8s.io/cloud-provider-azure/pkg/cache"
 )
 
 const (
@@ -66,6 +68,8 @@ type Driver struct {
 	volumeLocks          *volumeLocks
 	workingMountDir      string
 	enableGetVolumeStats bool
+	// a timed cache storing volume stats <volumeID, volumeStats>
+	volStatsCache *azcache.TimedCache
 	// this only applies to Windows node
 	removeSMBMappingDuringUnmount bool
 }
