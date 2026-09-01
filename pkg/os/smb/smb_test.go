@@ -21,6 +21,7 @@ package smb
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -55,5 +56,50 @@ func TestCheckForDuplicateSMBMounts(t *testing.T) {
 		if err != nil && test.expectedError != nil && err.Error() != test.expectedError.Error() {
 			t.Errorf("Expected error %v, got %v", test.expectedError, err)
 		}
+	}
+}
+
+func TestNewSmbGlobalMappingCmd(t *testing.T) {
+	tests := []struct {
+		name           string
+		requirePrivacy bool
+		expectedFlag   string
+		unexpectedFlag string
+	}{
+		{
+			name:           "require privacy true emits $true",
+			requirePrivacy: true,
+			expectedFlag:   "-RequirePrivacy $true",
+			unexpectedFlag: "-RequirePrivacy $false",
+		},
+		{
+			name:           "require privacy false emits $false",
+			requirePrivacy: false,
+			expectedFlag:   "-RequirePrivacy $false",
+			unexpectedFlag: "-RequirePrivacy $true",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cmd := newSmbGlobalMappingCmd(test.requirePrivacy)
+			if !strings.Contains(cmd, test.expectedFlag) {
+				t.Errorf("expected command to contain %q, got %q", test.expectedFlag, cmd)
+			}
+			if strings.Contains(cmd, test.unexpectedFlag) {
+				t.Errorf("expected command NOT to contain %q, got %q", test.unexpectedFlag, cmd)
+			}
+			// sanity: the New-SmbGlobalMapping invocation and env-var substitution must remain intact
+			for _, want := range []string{
+				"New-SmbGlobalMapping",
+				"$Env:smbuser",
+				"$Env:smbpassword",
+				"$Env:smbremotepath",
+			} {
+				if !strings.Contains(cmd, want) {
+					t.Errorf("expected command to contain %q, got %q", want, cmd)
+				}
+			}
+		})
 	}
 }
