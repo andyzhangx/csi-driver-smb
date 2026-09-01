@@ -50,6 +50,44 @@ func TestNewFakeDriver(t *testing.T) {
 	assert.NotNil(t, d)
 }
 
+func TestNewDriverRequirePrivacyForGlobalMapping(t *testing.T) {
+	truePtr := true
+	falsePtr := false
+	tests := []struct {
+		desc     string
+		input    *bool
+		expected bool
+	}{
+		{
+			desc:     "nil defaults to true (backwards compatible with existing callers)",
+			input:    nil,
+			expected: true,
+		},
+		{
+			desc:     "explicit true stays true",
+			input:    &truePtr,
+			expected: true,
+		},
+		{
+			desc:     "explicit false honored (opt-out)",
+			input:    &falsePtr,
+			expected: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			options := DriverOptions{
+				NodeID:                         fakeNodeID,
+				DriverName:                     DefaultDriverName,
+				RequirePrivacyForGlobalMapping: tc.input,
+			}
+			d := NewDriver(&options)
+			assert.NotNil(t, d)
+			assert.Equal(t, tc.expected, d.requirePrivacyForGlobalMapping)
+		})
+	}
+}
+
 func TestIsCorruptedDir(t *testing.T) {
 	existingMountPath, err := os.MkdirTemp(os.TempDir(), "csi-mount-test")
 	if err != nil {
