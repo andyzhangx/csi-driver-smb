@@ -147,6 +147,9 @@ windows:
   dsName: csi-smb-node-win # daemonset name
   kubelet: 'C:\var\lib\kubelet'
   removeSMBMappingDuringUnmount: true
+  # only takes effect when useHostProcessContainers: true
+  # set to false to disable SMB encryption/signing enforcement (-RequirePrivacy $false on New-SmbGlobalMapping)
+  requirePrivacyForGlobalMapping: true
   tolerations:
     - key: "node.kubernetes.io/os"
       operator: "Exists"
