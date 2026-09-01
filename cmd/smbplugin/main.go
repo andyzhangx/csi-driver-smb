@@ -35,21 +35,22 @@ func init() {
 }
 
 var (
-	endpoint                      = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	nodeID                        = flag.String("nodeid", "", "node id")
-	driverName                    = flag.String("drivername", smb.DefaultDriverName, "name of the driver")
-	ver                           = flag.Bool("ver", false, "Print the version and exit.")
-	metricsAddress                = flag.String("metrics-address", "", "export the metrics")
-	kubeconfig                    = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Required only when running out of cluster.")
-	enableGetVolumeStats          = flag.Bool("enable-get-volume-stats", true, "allow GET_VOLUME_STATS on agent node")
-	removeSMBMappingDuringUnmount = flag.Bool("remove-smb-mapping-during-unmount", true, "remove SMBMapping during unmount on Windows node")
-	workingMountDir               = flag.String("working-mount-dir", "/tmp", "working directory for provisioner to mount smb shares temporarily")
-	volStatsCacheExpireInMinutes  = flag.Int("vol-stats-cache-expire-in-minutes", 10, "The cache expire time in minutes for volume stats cache")
-	krb5CacheDirectory            = flag.String("krb5-cache-directory", smb.DefaultKrb5CacheDirectory, "The directory for kerberos cache")
-	krb5Prefix                    = flag.String("krb5-prefix", smb.DefaultKrb5CCName, "The prefix for kerberos cache")
-	defaultOnDeletePolicy         = flag.String("default-ondelete-policy", "", "default policy for deleting subdirectory when deleting a volume")
-	removeArchivedVolumePath      = flag.Bool("remove-archived-volume-path", true, "remove archived volume path in DeleteVolume")
-	enableWindowsHostProcess      = flag.Bool("enable-windows-host-process", false, "enable windows host process")
+	endpoint                       = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
+	nodeID                         = flag.String("nodeid", "", "node id")
+	driverName                     = flag.String("drivername", smb.DefaultDriverName, "name of the driver")
+	ver                            = flag.Bool("ver", false, "Print the version and exit.")
+	metricsAddress                 = flag.String("metrics-address", "", "export the metrics")
+	kubeconfig                     = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Required only when running out of cluster.")
+	enableGetVolumeStats           = flag.Bool("enable-get-volume-stats", true, "allow GET_VOLUME_STATS on agent node")
+	removeSMBMappingDuringUnmount  = flag.Bool("remove-smb-mapping-during-unmount", true, "remove SMBMapping during unmount on Windows node")
+	requirePrivacyForGlobalMapping = flag.Bool("require-privacy-for-global-mapping", true, "pass -RequirePrivacy $true to New-SmbGlobalMapping on Windows node; set to false to disable SMB encryption/signing enforcement for internal shares (only applies when --enable-windows-host-process=true)")
+	workingMountDir                = flag.String("working-mount-dir", "/tmp", "working directory for provisioner to mount smb shares temporarily")
+	volStatsCacheExpireInMinutes   = flag.Int("vol-stats-cache-expire-in-minutes", 10, "The cache expire time in minutes for volume stats cache")
+	krb5CacheDirectory             = flag.String("krb5-cache-directory", smb.DefaultKrb5CacheDirectory, "The directory for kerberos cache")
+	krb5Prefix                     = flag.String("krb5-prefix", smb.DefaultKrb5CCName, "The prefix for kerberos cache")
+	defaultOnDeletePolicy          = flag.String("default-ondelete-policy", "", "default policy for deleting subdirectory when deleting a volume")
+	removeArchivedVolumePath       = flag.Bool("remove-archived-volume-path", true, "remove archived volume path in DeleteVolume")
+	enableWindowsHostProcess       = flag.Bool("enable-windows-host-process", false, "enable windows host process")
 )
 
 // exit is a separate function to handle program termination
@@ -78,17 +79,18 @@ func main() {
 
 func handle() {
 	driverOptions := smb.DriverOptions{
-		NodeID:                        *nodeID,
-		DriverName:                    *driverName,
-		EnableGetVolumeStats:          *enableGetVolumeStats,
-		RemoveSMBMappingDuringUnmount: *removeSMBMappingDuringUnmount,
-		RemoveArchivedVolumePath:      *removeArchivedVolumePath,
-		WorkingMountDir:               *workingMountDir,
-		VolStatsCacheExpireInMinutes:  *volStatsCacheExpireInMinutes,
-		Krb5CacheDirectory:            *krb5CacheDirectory,
-		Krb5Prefix:                    *krb5Prefix,
-		DefaultOnDeletePolicy:         *defaultOnDeletePolicy,
-		EnableWindowsHostProcess:      *enableWindowsHostProcess,
+		NodeID:                         *nodeID,
+		DriverName:                     *driverName,
+		EnableGetVolumeStats:           *enableGetVolumeStats,
+		RemoveSMBMappingDuringUnmount:  *removeSMBMappingDuringUnmount,
+		RequirePrivacyForGlobalMapping: *requirePrivacyForGlobalMapping,
+		RemoveArchivedVolumePath:       *removeArchivedVolumePath,
+		WorkingMountDir:                *workingMountDir,
+		VolStatsCacheExpireInMinutes:   *volStatsCacheExpireInMinutes,
+		Krb5CacheDirectory:             *krb5CacheDirectory,
+		Krb5Prefix:                     *krb5Prefix,
+		DefaultOnDeletePolicy:          *defaultOnDeletePolicy,
+		EnableWindowsHostProcess:       *enableWindowsHostProcess,
 	}
 	driver := smb.NewDriver(&driverOptions)
 	driver.Run(*endpoint, *kubeconfig, false)
