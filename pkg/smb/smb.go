@@ -82,14 +82,17 @@ type DriverOptions struct {
 	EnableGetVolumeStats bool
 	// this only applies to Windows node
 	RemoveSMBMappingDuringUnmount bool
-	WorkingMountDir               string
-	VolStatsCacheExpireInMinutes  int
-	Krb5CacheDirectory            string
-	Krb5Prefix                    string
-	DefaultOnDeletePolicy         string
-	RemoveArchivedVolumePath      bool
-	EnableWindowsHostProcess      bool
-	Kubeconfig                    string
+	// this only applies to Windows host-process mounter;
+	// nil is treated as true to preserve zero-value compatibility
+	RequirePrivacyForGlobalMapping *bool
+	WorkingMountDir                string
+	VolStatsCacheExpireInMinutes   int
+	Krb5CacheDirectory             string
+	Krb5Prefix                     string
+	DefaultOnDeletePolicy          string
+	RemoveArchivedVolumePath       bool
+	EnableWindowsHostProcess       bool
+	Kubeconfig                     string
 }
 
 // Driver implements all interfaces of CSI drivers
@@ -113,13 +116,15 @@ type Driver struct {
 	volDeletionCache azcache.Resource
 	// this only applies to Windows node
 	removeSMBMappingDuringUnmount bool
-	krb5CacheDirectory            string
-	krb5Prefix                    string
-	defaultOnDeletePolicy         string
-	removeArchivedVolumePath      bool
-	enableWindowsHostProcess      bool
-	kubeconfig                    string
-	kubeClient                    kubernetes.Interface
+	// this only applies to Windows host-process mounter
+	requirePrivacyForGlobalMapping bool
+	krb5CacheDirectory             string
+	krb5Prefix                     string
+	defaultOnDeletePolicy          string
+	removeArchivedVolumePath       bool
+	enableWindowsHostProcess       bool
+	kubeconfig                     string
+	kubeClient                     kubernetes.Interface
 }
 
 // NewDriver Creates a NewCSIDriver object. Assumes vendor version is equal to driver version &
@@ -131,6 +136,7 @@ func NewDriver(options *DriverOptions) *Driver {
 	driver.NodeID = options.NodeID
 	driver.enableGetVolumeStats = options.EnableGetVolumeStats
 	driver.removeSMBMappingDuringUnmount = options.RemoveSMBMappingDuringUnmount
+	driver.requirePrivacyForGlobalMapping = options.RequirePrivacyForGlobalMapping == nil || *options.RequirePrivacyForGlobalMapping
 	driver.removeArchivedVolumePath = options.RemoveArchivedVolumePath
 	driver.workingMountDir = options.WorkingMountDir
 	driver.enableWindowsHostProcess = options.EnableWindowsHostProcess
@@ -177,7 +183,7 @@ func (d *Driver) Run(endpoint, _ string, testMode bool) {
 	}
 	klog.V(2).Infof("\nDRIVER INFORMATION:\n-------------------\n%s\n\nStreaming logs below:", versionMeta)
 
-	d.mounter, err = mounter.NewSafeMounter(d.enableWindowsHostProcess, d.removeSMBMappingDuringUnmount)
+	d.mounter, err = mounter.NewSafeMounter(d.enableWindowsHostProcess, d.removeSMBMappingDuringUnmount, d.requirePrivacyForGlobalMapping)
 	if err != nil {
 		klog.Fatalf("Failed to get safe mounter. Error: %v", err)
 	}

@@ -43,14 +43,22 @@ func IsSmbMapped(remotePath string) (bool, error) {
 	return true, nil
 }
 
-func NewSmbGlobalMapping(remotePath, username, password string) error {
+func newSmbGlobalMappingCmd(requirePrivacy bool) string {
+	requirePrivacyValue := "$true"
+	if !requirePrivacy {
+		requirePrivacyValue = "$false"
+	}
+	return fmt.Sprintf(`$PWord = ConvertTo-SecureString -String $Env:smbpassword -AsPlainText -Force`+
+		`;$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Env:smbuser, $PWord`+
+		`;New-SmbGlobalMapping -RemotePath $Env:smbremotepath -Credential $Credential -RequirePrivacy %s`, requirePrivacyValue)
+}
+
+func NewSmbGlobalMapping(remotePath, username, password string, requirePrivacy bool) error {
 	// use PowerShell Environment Variables to store user input string to prevent command line injection
 	// https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_environment_variables?view=powershell-5.1
-	cmdLine := fmt.Sprintf(`$PWord = ConvertTo-SecureString -String $Env:smbpassword -AsPlainText -Force` +
-		`;$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Env:smbuser, $PWord` +
-		`;New-SmbGlobalMapping -RemotePath $Env:smbremotepath -Credential $Credential -RequirePrivacy $true`)
+	cmdLine := newSmbGlobalMappingCmd(requirePrivacy)
 
-	klog.V(2).Infof("begin to run NewSmbGlobalMapping with %s, %s", remotePath, username)
+	klog.V(2).Infof("begin to run NewSmbGlobalMapping with %s, %s, requirePrivacy=%v", remotePath, username, requirePrivacy)
 	if output, err := util.RunPowershellCmd(cmdLine, fmt.Sprintf("smbuser=%s", username),
 		fmt.Sprintf("smbpassword=%s", password),
 		fmt.Sprintf("smbremotepath=%s", remotePath)); err != nil {

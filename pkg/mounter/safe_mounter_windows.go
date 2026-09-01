@@ -369,11 +369,11 @@ func NewCSIProxyMounter(removeSMBMappingDuringUnmount bool) (*csiProxyMounter, e
 	}, nil
 }
 
-func NewSafeMounter(enableWindowsHostProcess, removeSMBMappingDuringUnmount bool) (*mount.SafeFormatAndMount, error) {
+func NewSafeMounter(enableWindowsHostProcess, removeSMBMappingDuringUnmount, requirePrivacyForGlobalMapping bool) (*mount.SafeFormatAndMount, error) {
 	if enableWindowsHostProcess {
-		klog.V(2).Infof("using windows host process mounter")
+		klog.V(2).Infof("using windows host process mounter, requirePrivacyForGlobalMapping=%v", requirePrivacyForGlobalMapping)
 		return &mount.SafeFormatAndMount{
-			Interface: NewWinMounter(),
+			Interface: NewWinMounter(requirePrivacyForGlobalMapping),
 			Exec:      utilexec.New(),
 		}, nil
 	}
