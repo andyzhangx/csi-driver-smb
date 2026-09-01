@@ -83,7 +83,7 @@ func handle() {
 		DriverName:                     *driverName,
 		EnableGetVolumeStats:           *enableGetVolumeStats,
 		RemoveSMBMappingDuringUnmount:  *removeSMBMappingDuringUnmount,
-		RequirePrivacyForGlobalMapping: *requirePrivacyForGlobalMapping,
+		RequirePrivacyForGlobalMapping: requirePrivacyForGlobalMapping,
 		RemoveArchivedVolumePath:       *removeArchivedVolumePath,
 		WorkingMountDir:                *workingMountDir,
 		VolStatsCacheExpireInMinutes:   *volStatsCacheExpireInMinutes,
