@@ -82,8 +82,9 @@ type DriverOptions struct {
 	EnableGetVolumeStats bool
 	// this only applies to Windows node
 	RemoveSMBMappingDuringUnmount bool
-	// this only applies to Windows host-process mounter
-	RequirePrivacyForGlobalMapping bool
+	// this only applies to Windows host-process mounter;
+	// nil is treated as true to preserve zero-value compatibility
+	RequirePrivacyForGlobalMapping *bool
 	WorkingMountDir                string
 	VolStatsCacheExpireInMinutes   int
 	Krb5CacheDirectory             string
@@ -135,7 +136,7 @@ func NewDriver(options *DriverOptions) *Driver {
 	driver.NodeID = options.NodeID
 	driver.enableGetVolumeStats = options.EnableGetVolumeStats
 	driver.removeSMBMappingDuringUnmount = options.RemoveSMBMappingDuringUnmount
-	driver.requirePrivacyForGlobalMapping = options.RequirePrivacyForGlobalMapping
+	driver.requirePrivacyForGlobalMapping = options.RequirePrivacyForGlobalMapping == nil || *options.RequirePrivacyForGlobalMapping
 	driver.removeArchivedVolumePath = options.RemoveArchivedVolumePath
 	driver.workingMountDir = options.WorkingMountDir
 	driver.enableWindowsHostProcess = options.EnableWindowsHostProcess
