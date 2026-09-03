@@ -81,9 +81,9 @@ func TestNewDriverRequirePrivacyForGlobalMapping(t *testing.T) {
 		{
 			desc:                          "trim global mapping additional params",
 			input:                         &truePtr,
-			globalMappingAdditionalParams: "  -RequirePrivacy $false -RequireIntegrity $true  ",
+			globalMappingAdditionalParams: "  RequirePrivacy=false,RequireIntegrity=true  ",
 			expected:                      true,
-			expectedAdditionalParams:      "-RequirePrivacy $false -RequireIntegrity $true",
+			expectedAdditionalParams:      "RequirePrivacy=false,RequireIntegrity=true",
 		},
 	}
 	for _, tc := range tests {

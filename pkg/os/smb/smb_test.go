@@ -136,6 +136,8 @@ func TestNewSmbGlobalMappingCmd(t *testing.T) {
 	cmd := newSmbGlobalMappingCmd()
 	for _, want := range []string{
 		"New-SmbGlobalMapping @Params",
+		"function HasValue([string]$Value) { return -not [string]::IsNullOrEmpty($Value) }",
+		"if (HasValue $Env:smbopt_requireprivacy)",
 		"$Env:smbuser",
 		"$Env:smbpassword",
 		"$Env:smbremotepath",

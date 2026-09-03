@@ -159,7 +159,7 @@ windows:
   # set to false to stop requiring SMB encryption on the global mapping (-RequirePrivacy $false on New-SmbGlobalMapping);
   # this only removes the encryption requirement, it does not disable SMB signing or forbid negotiated encryption
   requirePrivacyForGlobalMapping: true
-  # optional structured key=value options for New-SmbGlobalMapping on host process Windows nodes
+  # optional structured allowlisted key=value options for New-SmbGlobalMapping on host process Windows nodes
   # examples: 'RequirePrivacy=false' or 'RequirePrivacy=false,RequireIntegrity=true'
   # supported keys: Persistent, RequireIntegrity, RequirePrivacy, UseWriteThrough, FullAccess,
   # DenyAccess, TransportType, SkipCertificateCheck, CompressNetworkTraffic, BlockNTLM,

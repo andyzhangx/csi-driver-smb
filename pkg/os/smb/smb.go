@@ -135,19 +135,21 @@ func newSmbGlobalMappingCmd() string {
 		`$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Env:smbuser, $PWord` +
 		`;` +
 		`$Params = @{ RemotePath = $Env:smbremotepath; Credential = $Credential }` +
-		`;if ($Env:smbopt_persistent -ne '') { $Params.Persistent = [System.Convert]::ToBoolean($Env:smbopt_persistent) }` +
-		`;if ($Env:smbopt_requireintegrity -ne '') { $Params.RequireIntegrity = [System.Convert]::ToBoolean($Env:smbopt_requireintegrity) }` +
-		`;if ($Env:smbopt_requireprivacy -ne '') { $Params.RequirePrivacy = [System.Convert]::ToBoolean($Env:smbopt_requireprivacy) }` +
-		`;if ($Env:smbopt_usewritethrough -ne '') { $Params.UseWriteThrough = [System.Convert]::ToBoolean($Env:smbopt_usewritethrough) }` +
-		`;if ($Env:smbopt_fullaccess -ne '') { $Params.FullAccess = $Env:smbopt_fullaccess -split ';' }` +
-		`;if ($Env:smbopt_denyaccess -ne '') { $Params.DenyAccess = $Env:smbopt_denyaccess -split ';' }` +
-		`;if ($Env:smbopt_transporttype -ne '') { $Params.TransportType = $Env:smbopt_transporttype }` +
-		`;if ($Env:smbopt_skipcertificatecheck -ne '') { $Params.SkipCertificateCheck = [System.Convert]::ToBoolean($Env:smbopt_skipcertificatecheck) }` +
-		`;if ($Env:smbopt_compressnetworktraffic -ne '') { $Params.CompressNetworkTraffic = [System.Convert]::ToBoolean($Env:smbopt_compressnetworktraffic) }` +
-		`;if ($Env:smbopt_blockntlm -ne '') { $Params.BlockNTLM = [System.Convert]::ToBoolean($Env:smbopt_blockntlm) }` +
-		`;if ($Env:smbopt_tcpport -ne '') { $Params.TcpPort = [UInt16]::Parse($Env:smbopt_tcpport) }` +
-		`;if ($Env:smbopt_quicport -ne '') { $Params.QuicPort = [UInt16]::Parse($Env:smbopt_quicport) }` +
-		`;if ($Env:smbopt_rdmaport -ne '') { $Params.RdmaPort = [UInt16]::Parse($Env:smbopt_rdmaport) }` +
+		`;` +
+		`function HasValue([string]$Value) { return -not [string]::IsNullOrEmpty($Value) }` +
+		`;if (HasValue $Env:smbopt_persistent) { $Params.Persistent = [System.Convert]::ToBoolean($Env:smbopt_persistent) }` +
+		`;if (HasValue $Env:smbopt_requireintegrity) { $Params.RequireIntegrity = [System.Convert]::ToBoolean($Env:smbopt_requireintegrity) }` +
+		`;if (HasValue $Env:smbopt_requireprivacy) { $Params.RequirePrivacy = [System.Convert]::ToBoolean($Env:smbopt_requireprivacy) }` +
+		`;if (HasValue $Env:smbopt_usewritethrough) { $Params.UseWriteThrough = [System.Convert]::ToBoolean($Env:smbopt_usewritethrough) }` +
+		`;if (HasValue $Env:smbopt_fullaccess) { $Params.FullAccess = $Env:smbopt_fullaccess -split ';' }` +
+		`;if (HasValue $Env:smbopt_denyaccess) { $Params.DenyAccess = $Env:smbopt_denyaccess -split ';' }` +
+		`;if (HasValue $Env:smbopt_transporttype) { $Params.TransportType = $Env:smbopt_transporttype }` +
+		`;if (HasValue $Env:smbopt_skipcertificatecheck) { $Params.SkipCertificateCheck = [System.Convert]::ToBoolean($Env:smbopt_skipcertificatecheck) }` +
+		`;if (HasValue $Env:smbopt_compressnetworktraffic) { $Params.CompressNetworkTraffic = [System.Convert]::ToBoolean($Env:smbopt_compressnetworktraffic) }` +
+		`;if (HasValue $Env:smbopt_blockntlm) { $Params.BlockNTLM = [System.Convert]::ToBoolean($Env:smbopt_blockntlm) }` +
+		`;if (HasValue $Env:smbopt_tcpport) { $Params.TcpPort = [UInt16]::Parse($Env:smbopt_tcpport) }` +
+		`;if (HasValue $Env:smbopt_quicport) { $Params.QuicPort = [UInt16]::Parse($Env:smbopt_quicport) }` +
+		`;if (HasValue $Env:smbopt_rdmaport) { $Params.RdmaPort = [UInt16]::Parse($Env:smbopt_rdmaport) }` +
 		`;New-SmbGlobalMapping @Params`
 }
 
