@@ -43,22 +43,45 @@ func IsSmbMapped(remotePath string) (bool, error) {
 	return true, nil
 }
 
-func newSmbGlobalMappingCmd(requirePrivacy bool) string {
-	requirePrivacyValue := "$true"
-	if !requirePrivacy {
-		requirePrivacyValue = "$false"
+func validateGlobalMappingAdditionalParams(globalMappingAdditionalParams string) error {
+	if strings.ContainsAny(globalMappingAdditionalParams, ";|&\r\n`") {
+		return fmt.Errorf("global mapping additional params contain unsupported shell control characters")
+	}
+	for _, fragment := range []string{"$(", "${", "@("} {
+		if strings.Contains(globalMappingAdditionalParams, fragment) {
+			return fmt.Errorf("global mapping additional params contain unsupported PowerShell expression fragment %q", fragment)
+		}
+	}
+	return nil
+}
+
+func newSmbGlobalMappingCmd(requirePrivacy bool, globalMappingAdditionalParams string) (string, error) {
+	globalMappingAdditionalParams = strings.TrimSpace(globalMappingAdditionalParams)
+	if globalMappingAdditionalParams != "" {
+		if err := validateGlobalMappingAdditionalParams(globalMappingAdditionalParams); err != nil {
+			return "", err
+		}
+	} else {
+		requirePrivacyValue := "$true"
+		if !requirePrivacy {
+			requirePrivacyValue = "$false"
+		}
+		globalMappingAdditionalParams = fmt.Sprintf("-RequirePrivacy %s", requirePrivacyValue)
 	}
 	return fmt.Sprintf(`$PWord = ConvertTo-SecureString -String $Env:smbpassword -AsPlainText -Force`+
 		`;$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Env:smbuser, $PWord`+
-		`;New-SmbGlobalMapping -RemotePath $Env:smbremotepath -Credential $Credential -RequirePrivacy %s`, requirePrivacyValue)
+		`;New-SmbGlobalMapping -RemotePath $Env:smbremotepath -Credential $Credential %s`, globalMappingAdditionalParams), nil
 }
 
-func NewSmbGlobalMapping(remotePath, username, password string, requirePrivacy bool) error {
+func NewSmbGlobalMapping(remotePath, username, password string, requirePrivacy bool, globalMappingAdditionalParams string) error {
 	// use PowerShell Environment Variables to store user input string to prevent command line injection
 	// https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_environment_variables?view=powershell-5.1
-	cmdLine := newSmbGlobalMappingCmd(requirePrivacy)
+	cmdLine, err := newSmbGlobalMappingCmd(requirePrivacy, globalMappingAdditionalParams)
+	if err != nil {
+		return err
+	}
 
-	klog.V(2).Infof("begin to run NewSmbGlobalMapping with %s, %s, requirePrivacy=%v", remotePath, username, requirePrivacy)
+	klog.V(2).Infof("begin to run NewSmbGlobalMapping with %s, %s, requirePrivacy=%v, globalMappingAdditionalParams=%q", remotePath, username, requirePrivacy, globalMappingAdditionalParams)
 	if output, err := util.RunPowershellCmd(cmdLine, fmt.Sprintf("smbuser=%s", username),
 		fmt.Sprintf("smbpassword=%s", password),
 		fmt.Sprintf("smbremotepath=%s", remotePath)); err != nil {

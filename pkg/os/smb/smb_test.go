@@ -61,35 +61,57 @@ func TestCheckForDuplicateSMBMounts(t *testing.T) {
 
 func TestNewSmbGlobalMappingCmd(t *testing.T) {
 	tests := []struct {
-		name           string
-		requirePrivacy bool
-		expectedFlag   string
-		unexpectedFlag string
+		name                string
+		requirePrivacy      bool
+		globalMappingParams string
+		expectedFragment    string
+		unexpectedFragment  string
+		expectErr           string
 	}{
 		{
-			name:           "require privacy true emits $true",
-			requirePrivacy: true,
-			expectedFlag:   "-RequirePrivacy $true",
-			unexpectedFlag: "-RequirePrivacy $false",
+			name:               "require privacy true emits $true when no additional params provided",
+			requirePrivacy:     true,
+			expectedFragment:   "-RequirePrivacy $true",
+			unexpectedFragment: "-RequirePrivacy $false",
 		},
 		{
-			name:           "require privacy false emits $false",
-			requirePrivacy: false,
-			expectedFlag:   "-RequirePrivacy $false",
-			unexpectedFlag: "-RequirePrivacy $true",
+			name:               "require privacy false emits $false when no additional params provided",
+			requirePrivacy:     false,
+			expectedFragment:   "-RequirePrivacy $false",
+			unexpectedFragment: "-RequirePrivacy $true",
+		},
+		{
+			name:                "additional params override require privacy flag",
+			requirePrivacy:      true,
+			globalMappingParams: "-RequirePrivacy $false -RequireIntegrity $true",
+			expectedFragment:    "-RequirePrivacy $false -RequireIntegrity $true",
+			unexpectedFragment:  "-RequirePrivacy $true",
+		},
+		{
+			name:                "reject unsupported powershell expressions",
+			globalMappingParams: "-RequirePrivacy $(Get-Date)",
+			expectErr:           "unsupported PowerShell expression fragment",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cmd := newSmbGlobalMappingCmd(test.requirePrivacy)
-			if !strings.Contains(cmd, test.expectedFlag) {
-				t.Errorf("expected command to contain %q, got %q", test.expectedFlag, cmd)
+			cmd, err := newSmbGlobalMappingCmd(test.requirePrivacy, test.globalMappingParams)
+			if test.expectErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.expectErr) {
+					t.Fatalf("expected error containing %q, got %v", test.expectErr, err)
+				}
+				return
 			}
-			if strings.Contains(cmd, test.unexpectedFlag) {
-				t.Errorf("expected command NOT to contain %q, got %q", test.unexpectedFlag, cmd)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
 			}
-			// sanity: the New-SmbGlobalMapping invocation and env-var substitution must remain intact
+			if !strings.Contains(cmd, test.expectedFragment) {
+				t.Errorf("expected command to contain %q, got %q", test.expectedFragment, cmd)
+			}
+			if test.unexpectedFragment != "" && strings.Contains(cmd, test.unexpectedFragment) {
+				t.Errorf("expected command NOT to contain %q, got %q", test.unexpectedFragment, cmd)
+			}
 			for _, want := range []string{
 				"New-SmbGlobalMapping",
 				"$Env:smbuser",
