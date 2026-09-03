@@ -59,44 +59,61 @@ func TestCheckForDuplicateSMBMounts(t *testing.T) {
 	}
 }
 
-func TestNewSmbGlobalMappingCmd(t *testing.T) {
+func TestParseGlobalMappingAdditionalParams(t *testing.T) {
 	tests := []struct {
 		name                string
 		requirePrivacy      bool
 		globalMappingParams string
-		expectedFragment    string
-		unexpectedFragment  string
+		expectedEnvs        []string
 		expectErr           string
 	}{
 		{
-			name:               "require privacy true emits $true when no additional params provided",
-			requirePrivacy:     true,
-			expectedFragment:   "-RequirePrivacy $true",
-			unexpectedFragment: "-RequirePrivacy $false",
+			name:           "default require privacy true when no additional params provided",
+			requirePrivacy: true,
+			expectedEnvs:   []string{"smbopt_requireprivacy=true"},
 		},
 		{
-			name:               "require privacy false emits $false when no additional params provided",
-			requirePrivacy:     false,
-			expectedFragment:   "-RequirePrivacy $false",
-			unexpectedFragment: "-RequirePrivacy $true",
+			name:           "default require privacy false when no additional params provided",
+			requirePrivacy: false,
+			expectedEnvs:   []string{"smbopt_requireprivacy=false"},
 		},
 		{
-			name:                "additional params override require privacy flag",
+			name:                "structured params are parsed into env vars",
 			requirePrivacy:      true,
-			globalMappingParams: "-RequirePrivacy $false -RequireIntegrity $true",
-			expectedFragment:    "-RequirePrivacy $false -RequireIntegrity $true",
-			unexpectedFragment:  "-RequirePrivacy $true",
+			globalMappingParams: "RequirePrivacy=false,RequireIntegrity=true,TransportType=QUIC,TcpPort=445,FullAccess=user1;user2",
+			expectedEnvs: []string{
+				"smbopt_requireprivacy=false",
+				"smbopt_requireintegrity=true",
+				"smbopt_transporttype=QUIC",
+				"smbopt_tcpport=445",
+				"smbopt_fullaccess=user1;user2",
+			},
 		},
 		{
-			name:                "reject unsupported powershell expressions",
-			globalMappingParams: "-RequirePrivacy $(Get-Date)",
-			expectErr:           "unsupported PowerShell expression fragment",
+			name:                "reject invalid format",
+			globalMappingParams: "RequirePrivacy false",
+			expectErr:           "expected key=value",
+		},
+		{
+			name:                "reject unsupported key",
+			globalMappingParams: "WhatIf=true",
+			expectErr:           "unsupported global mapping additional param",
+		},
+		{
+			name:                "reject invalid boolean",
+			globalMappingParams: "RequirePrivacy=maybe",
+			expectErr:           "invalid boolean value",
+		},
+		{
+			name:                "reject duplicate key",
+			globalMappingParams: "RequirePrivacy=true,RequirePrivacy=false",
+			expectErr:           "duplicate global mapping additional param",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cmd, err := newSmbGlobalMappingCmd(test.requirePrivacy, test.globalMappingParams)
+			envs, err := parseGlobalMappingAdditionalParams(test.requirePrivacy, test.globalMappingParams)
 			if test.expectErr != "" {
 				if err == nil || !strings.Contains(err.Error(), test.expectErr) {
 					t.Fatalf("expected error containing %q, got %v", test.expectErr, err)
@@ -106,22 +123,38 @@ func TestNewSmbGlobalMappingCmd(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
-			if !strings.Contains(cmd, test.expectedFragment) {
-				t.Errorf("expected command to contain %q, got %q", test.expectedFragment, cmd)
-			}
-			if test.unexpectedFragment != "" && strings.Contains(cmd, test.unexpectedFragment) {
-				t.Errorf("expected command NOT to contain %q, got %q", test.unexpectedFragment, cmd)
-			}
-			for _, want := range []string{
-				"New-SmbGlobalMapping",
-				"$Env:smbuser",
-				"$Env:smbpassword",
-				"$Env:smbremotepath",
-			} {
-				if !strings.Contains(cmd, want) {
-					t.Errorf("expected command to contain %q, got %q", want, cmd)
+			for _, want := range test.expectedEnvs {
+				if !containsString(envs, want) {
+					t.Fatalf("expected envs to contain %q, got %v", want, envs)
 				}
 			}
 		})
 	}
+}
+
+func TestNewSmbGlobalMappingCmd(t *testing.T) {
+	cmd := newSmbGlobalMappingCmd()
+	for _, want := range []string{
+		"New-SmbGlobalMapping @Params",
+		"$Env:smbuser",
+		"$Env:smbpassword",
+		"$Env:smbremotepath",
+		"$Env:smbopt_requireprivacy",
+		"$Env:smbopt_requireintegrity",
+		"$Env:smbopt_tcpport",
+		"$Env:smbopt_fullaccess",
+	} {
+		if !strings.Contains(cmd, want) {
+			t.Fatalf("expected command to contain %q, got %q", want, cmd)
+		}
+	}
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
